@@ -1,0 +1,43 @@
+Create a full Python Flask web application for THE DARK ORDER HALLOWEEN PLAY AND PARTY. 
+
+The app has two fully separated flows: Admin and Buyer.
+
+Admin Flow:
+1. Login using a 4-digit M-Pesa-style PIN stored in ADMIN_PASSWORD environment variable.
+2. Dashboard buttons:
+   - Create Ticket Instance: input name, capacity, prices (Regular/VIP/VVIP) → save in ticket_instances table.
+   - Manage Ticket Instances: list instances, delete instance (does NOT delete purchased tickets).
+   - Scan Tickets: back camera only or image upload, scan logic:
+       - Valid & unused → green, mark as used, show details.
+       - Already scanned → red, "Ticket Already Scanned".
+       - Not in DB → red, "Invalid Ticket".
+     Scan pauses to show result; Scan Next Ticket clears previous result.
+     Log all scans.
+
+Buyer Flow:
+1. Sign Up / Sign In: email + 4-digit PIN; Forgot PIN generates random 4-digit PIN emailed automatically.
+2. Ticket Selection:
+   - Tickets displayed as cards (name, capacity, prices), inputs: quantity (placeholder QUANTITY), tier dropdown, Add to Cart.
+   - Cart shows accumulated tickets; X icon removes selection.
+3. Purchase:
+   - Enter M-Pesa phone number.
+   - Click Purchase Tickets → triggers PayHero STK Push.
+   - STK push includes amount, phoneNumber (exact capitalization), channel_id, provider="m-pesa", external_reference, callback_url (dynamic from Replit), metadata (client_id + ticket selections).
+4. Callback Handling:
+   - /api/payhero/callback receives status, external_reference, metadata.
+   - Success: generate UUID tickets, QR code (/ticket/verify/<ticket_id>), PDF (red/black haunted theme, horror fonts for titles, readable for critical info), store in tickets table, mark payment completed, email tickets, show in My Tickets tab (newest on top).
+   - Failure: mark payment failed, no tickets generated, buyer retries.
+5. My Tickets Tab: displays all tickets linked to client_id, PDFs downloadable, QR codes do not expire.
+6. Database: users, ticket_instances, tickets, payments.
+7. Logging & Security: log payments, STK push, scans, ticket generation; Flask sessions using SECRET_KEY; buyers cannot access admin panel.
+8. Edge Cases: deleting ticket instances does not remove purchased tickets, multiple purchases accumulate, STK push may timeout, tickets never expire.
+9. Email: all ticket PDFs sent automatically to buyer using EMAIL_ADDRESS and EMAIL_APP_PASSWORD environment variables.
+
+Environment Variables:
+- DATABASE_URL
+- PAYHERO_BASIC_AUTH_TOKEN
+- PAYHERO_CHANNEL_ID
+- ADMIN_PASSWORD
+- SECRET_KEY
+- EMAIL_ADDRESS
+- EMAIL_APP_PASSWORD
