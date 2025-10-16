@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Ticket - The Dark Order</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>TICKET VERIFICATION</h1>
+        </div>
+        
+        <div class="verification-result">
+            {% if valid %}
+            <div class="verify-valid">
+                <h2>✓ VALID TICKET</h2>
+                <p><strong>Event:</strong> {{ ticket.ticket_instance.name }}</p>
+                <p><strong>Tier:</strong> {{ ticket.tier.upper() }}</p>
+                <p><strong>Ticket ID:</strong> {{ ticket.id }}</p>
+                {% if ticket.scanned_at %}
+                <p class="scanned">Already scanned at: {{ ticket.scanned_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                {% else %}
+                <p class="not-scanned">Not yet scanned</p>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="verify-invalid">
+                <h2>✗ {{ message }}</h2>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

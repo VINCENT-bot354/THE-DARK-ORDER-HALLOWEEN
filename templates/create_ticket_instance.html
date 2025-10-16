@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Ticket Instance - The Dark Order</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CREATE TICKET INSTANCE</h1>
+        </div>
+        
+        <div class="form-container">
+            <div id="success-message" class="success-message" style="display: none;"></div>
+            <div id="error-message" class="error-message" style="display: none;"></div>
+            
+            <div class="form-group">
+                <label>Ticket Name</label>
+                <input type="text" id="name" placeholder="e.g., Main Event Ticket">
+            </div>
+            
+            <div class="form-group">
+                <label>Capacity</label>
+                <input type="number" id="capacity" placeholder="e.g., 100">
+            </div>
+            
+            <div class="form-group">
+                <label>Regular Price (KES)</label>
+                <input type="number" id="regular_price" placeholder="e.g., 500">
+            </div>
+            
+            <div class="form-group">
+                <label>VIP Price (KES)</label>
+                <input type="number" id="vip_price" placeholder="e.g., 1000">
+            </div>
+            
+            <div class="form-group">
+                <label>VVIP Price (KES)</label>
+                <input type="number" id="vvip_price" placeholder="e.g., 2000">
+            </div>
+            
+            <button class="btn btn-primary" onclick="createInstance()">Create Instance</button>
+            <a href="/admin/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+    
+    <script>
+        async function createInstance() {
+            const data = {
+                name: document.getElementById('name').value,
+                capacity: parseInt(document.getElementById('capacity').value),
+                regular_price: parseFloat(document.getElementById('regular_price').value) || null,
+                vip_price: parseFloat(document.getElementById('vip_price').value) || null,
+                vvip_price: parseFloat(document.getElementById('vvip_price').value) || null
+            };
+            
+            if (!data.name || !data.capacity) {
+                document.getElementById('error-message').textContent = 'Name and capacity are required';
+                document.getElementById('error-message').style.display = 'block';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/create-ticket-instance', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('success-message').textContent = 'Ticket instance created successfully!';
+                    document.getElementById('success-message').style.display = 'block';
+                    document.getElementById('error-message').style.display = 'none';
+                    
+                    document.getElementById('name').value = '';
+                    document.getElementById('capacity').value = '';
+                    document.getElementById('regular_price').value = '';
+                    document.getElementById('vip_price').value = '';
+                    document.getElementById('vvip_price').value = '';
+                }
+            } catch (error) {
+                document.getElementById('error-message').textContent = 'Failed to create instance';
+                document.getElementById('error-message').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

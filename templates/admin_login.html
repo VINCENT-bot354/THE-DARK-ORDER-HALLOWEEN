@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - The Dark Order</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ADMIN ACCESS</h1>
+        </div>
+        
+        <div class="form-container">
+            <div id="error-message" class="error-message" style="display: none;"></div>
+            
+            <div class="pin-input-group">
+                <label>Enter 4-Digit PIN</label>
+                <div class="pin-boxes">
+                    <input type="password" maxlength="1" class="pin-box" id="pin1" />
+                    <input type="password" maxlength="1" class="pin-box" id="pin2" />
+                    <input type="password" maxlength="1" class="pin-box" id="pin3" />
+                    <input type="password" maxlength="1" class="pin-box" id="pin4" />
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="adminLogin()">Login</button>
+            <a href="/" class="btn btn-secondary">Back</a>
+        </div>
+    </div>
+    
+    <script>
+        const pinBoxes = document.querySelectorAll('.pin-box');
+        
+        pinBoxes.forEach((box, index) => {
+            box.addEventListener('input', (e) => {
+                if (e.target.value && index < 3) {
+                    pinBoxes[index + 1].focus();
+                }
+            });
+            
+            box.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    pinBoxes[index - 1].focus();
+                }
+            });
+        });
+        
+        async function adminLogin() {
+            const pin = Array.from(pinBoxes).map(box => box.value).join('');
+            
+            if (pin.length !== 4) {
+                document.getElementById('error-message').textContent = 'Please enter a 4-digit PIN';
+                document.getElementById('error-message').style.display = 'block';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({pin})
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = '/admin/dashboard';
+                } else {
+                    document.getElementById('error-message').textContent = 'Invalid PIN';
+                    document.getElementById('error-message').style.display = 'block';
+                    pinBoxes.forEach(box => box.value = '');
+                    pinBoxes[0].focus();
+                }
+            } catch (error) {
+                document.getElementById('error-message').textContent = 'Login failed';
+                document.getElementById('error-message').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

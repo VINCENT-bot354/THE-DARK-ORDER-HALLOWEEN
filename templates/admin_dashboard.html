@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - The Dark Order</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ADMIN DASHBOARD</h1>
+        </div>
+        
+        <div class="dashboard-grid">
+            <a href="/admin/create-ticket-instance" class="dashboard-card">
+                <h3>Create Ticket Instance</h3>
+                <p>Add new ticket types with pricing</p>
+            </a>
+            
+            <a href="/admin/manage-instances" class="dashboard-card">
+                <h3>Manage Ticket Instances</h3>
+                <p>View and delete ticket instances</p>
+            </a>
+            
+            <a href="/admin/scan" class="dashboard-card">
+                <h3>Scan Tickets</h3>
+                <p>Verify tickets at entrance</p>
+            </a>
+        </div>
+        
+        <div class="button-group">
+            <a href="/admin/logout" class="btn btn-secondary">Logout</a>
+        </div>
+    </div>
+</body>
+</html>

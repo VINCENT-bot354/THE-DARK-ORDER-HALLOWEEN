@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy Tickets - The Dark Order</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>THE DARK ORDER</h1>
+            <h2>Select Your Tickets</h2>
+        </div>
+        
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('selection')">Ticket Selection</button>
+            <button class="tab-btn" onclick="switchTab('my-tickets')">My Tickets</button>
+            <button class="tab-btn" onclick="location.href='/logout'">Logout</button>
+        </div>
+        
+        <div id="selection-tab" class="tab-content active">
+            <div class="tickets-grid">
+                {% if instances %}
+                    {% for instance in instances %}
+                    <div class="ticket-card">
+                        <h3>{{ instance.name }}</h3>
+                        <p class="capacity">Capacity: {{ instance.capacity }}</p>
+                        <div class="prices">
+                            {% if instance.regular_price %}
+                            <p>Regular: KES {{ instance.regular_price }}</p>
+                            {% endif %}
+                            {% if instance.vip_price %}
+                            <p>VIP: KES {{ instance.vip_price }}</p>
+                            {% endif %}
+                            {% if instance.vvip_price %}
+                            <p>VVIP: KES {{ instance.vvip_price }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="ticket-controls">
+                            <input type="number" placeholder="QUANTITY" min="1" value="1" id="qty-{{ instance.id }}" class="quantity-input">
+                            <select id="tier-{{ instance.id }}" class="tier-select">
+                                {% if instance.regular_price %}<option value="regular">Regular</option>{% endif %}
+                                {% if instance.vip_price %}<option value="vip">VIP</option>{% endif %}
+                                {% if instance.vvip_price %}<option value="vvip">VVIP</option>{% endif %}
+                            </select>
+                            <button class="btn btn-primary" onclick="addToCart({{ instance.id }}, '{{ instance.name }}')">Add to Cart</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="no-data">No tickets available at the moment</p>
+                {% endif %}
+            </div>
+            
+            <div id="cart-section" class="cart-section" style="display: none;">
+                <h2>Your Cart</h2>
+                <div id="cart-items"></div>
+                <div class="cart-total">
+                    <strong>Total: KES <span id="cart-total">0</span></strong>
+                </div>
+                <div class="form-group">
+                    <label>M-Pesa Phone Number</label>
+                    <input type="tel" id="phone-number" placeholder="2547XXXXXXXX">
+                </div>
+                <button class="btn btn-primary" onclick="purchaseTickets()">Purchase Tickets</button>
+            </div>
+        </div>
+        
+        <div id="my-tickets-tab" class="tab-content">
+            <p>Loading tickets...</p>
+        </div>
+    </div>
+    
+    <script>
+        let cart = [];
+        const instances = {{ instances|tojson }};
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            if (tab === 'selection') {
+                document.querySelector('.tab-btn').classList.add('active');
+                document.getElementById('selection-tab').classList.add('active');
+            } else if (tab === 'my-tickets') {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('my-tickets-tab').classList.add('active');
+                loadMyTickets();
+            }
+        }
+        
+        function addToCart(instanceId, instanceName) {
+            const quantity = parseInt(document.getElementById(`qty-${instanceId}`).value) || 1;
+            const tier = document.getElementById(`tier-${instanceId}`).value;
+            
+            const instance = instances.find(i => i.id === instanceId);
+            let price = 0;
+            if (tier === 'regular') price = instance.regular_price;
+            if (tier === 'vip') price = instance.vip_price;
+            if (tier === 'vvip') price = instance.vvip_price;
+            
+            cart.push({
+                instance_id: instanceId,
+                instance_name: instanceName,
+                tier: tier,
+                quantity: quantity,
+                price: price
+            });
+            
+            updateCart();
+        }
+        
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCart();
+        }
+        
+        function updateCart() {
+            if (cart.length === 0) {
+                document.getElementById('cart-section').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('cart-section').style.display = 'block';
+            
+            let html = '';
+            let total = 0;
+            
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                html += `
+                    <div class="cart-item">
+                        <span>${item.instance_name} - ${item.tier.toUpperCase()} x ${item.quantity}</span>
+                        <span>KES ${itemTotal}</span>
+                        <button class="btn-remove" onclick="removeFromCart(${index})">✕</button>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('cart-items').innerHTML = html;
+            document.getElementById('cart-total').textContent = total;
+        }
+        
+        async function purchaseTickets() {
+            const phoneNumber = document.getElementById('phone-number').value;
+            
+            if (!phoneNumber || cart.length === 0) {
+                alert('Please add items to cart and enter phone number');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/purchase', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        phoneNumber: phoneNumber,
+                        cart: cart
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Payment request sent! Please check your phone to complete the payment.');
+                    cart = [];
+                    updateCart();
+                } else {
+                    alert('Payment failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Purchase failed');
+            }
+        }
+        
+        async function loadMyTickets() {
+            try {
+                const response = await fetch('/my-tickets');
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const ticketsContent = doc.querySelector('.tickets-list');
+                
+                if (ticketsContent) {
+                    document.getElementById('my-tickets-tab').innerHTML = ticketsContent.outerHTML;
+                } else {
+                    document.getElementById('my-tickets-tab').innerHTML = '<p class="no-data">No tickets purchased yet</p>';
+                }
+            } catch (error) {
+                document.getElementById('my-tickets-tab').innerHTML = '<p class="no-data">Failed to load tickets</p>';
+            }
+        }
+    </script>
+</body>
+</html>

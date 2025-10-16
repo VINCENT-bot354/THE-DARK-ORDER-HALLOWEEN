@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Tickets - The Dark Order</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="tickets-list">
+            {% if tickets %}
+                {% for ticket in tickets %}
+                <div class="my-ticket-card">
+                    <h3>{{ ticket.ticket_instance.name }}</h3>
+                    <p><strong>Tier:</strong> {{ ticket.tier.upper() }}</p>
+                    <p><strong>Ticket ID:</strong> {{ ticket.id }}</p>
+                    <p><strong>Purchased:</strong> {{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% if ticket.scanned_at %}
+                    <p class="scanned">Scanned at: {{ ticket.scanned_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% else %}
+                    <p class="not-scanned">Not yet scanned</p>
+                    {% endif %}
+                    <div class="qr-code">
+                        <img src="data:image/png;base64,{{ ticket.qr_code_data.split('/')[-1] }}" alt="QR Code" style="max-width: 200px;">
+                    </div>
+                    <a href="/download-ticket/{{ ticket.id }}" class="btn btn-primary">Download PDF</a>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-data">No tickets purchased yet</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

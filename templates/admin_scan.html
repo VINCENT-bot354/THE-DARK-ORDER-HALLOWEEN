@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Tickets - The Dark Order</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SCAN TICKETS</h1>
+        </div>
+        
+        <div class="scan-container">
+            <div class="scan-options">
+                <button class="btn btn-primary" onclick="startCamera()">Start Camera</button>
+                <button class="btn btn-secondary" onclick="stopCamera()">Stop Camera</button>
+                <input type="file" id="qr-input-file" accept="image/*" onchange="scanFromFile()" style="display: none;">
+                <button class="btn btn-secondary" onclick="document.getElementById('qr-input-file').click()">Upload Image</button>
+            </div>
+            
+            <div id="qr-reader" style="width: 100%; max-width: 600px; margin: 20px auto;"></div>
+            
+            <div id="scan-result" class="scan-result" style="display: none;">
+                <div id="result-status" class="result-status"></div>
+                <div id="result-details" class="result-details"></div>
+                <button class="btn btn-primary" onclick="clearResult()">Scan Next Ticket</button>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <a href="/admin/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+    
+    <script>
+        let html5QrCode = null;
+        
+        async function startCamera() {
+            if (html5QrCode) {
+                await stopCamera();
+            }
+            
+            html5QrCode = new Html5Qrcode("qr-reader");
+            
+            try {
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: 250 },
+                    onScanSuccess
+                );
+            } catch (err) {
+                console.error("Camera start failed:", err);
+                alert("Failed to start camera. Please check permissions.");
+            }
+        }
+        
+        async function stopCamera() {
+            if (html5QrCode) {
+                try {
+                    await html5QrCode.stop();
+                    html5QrCode = null;
+                } catch (err) {
+                    console.error("Camera stop failed:", err);
+                }
+            }
+        }
+        
+        async function scanFromFile() {
+            const file = document.getElementById('qr-input-file').files[0];
+            if (!file) return;
+            
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("qr-reader");
+            }
+            
+            try {
+                const result = await html5QrCode.scanFile(file, true);
+                onScanSuccess(result);
+            } catch (err) {
+                alert("No QR code found in image");
+            }
+        }
+        
+        async function onScanSuccess(decodedText) {
+            await stopCamera();
+            
+            const ticketId = decodedText.split('/').pop();
+            
+            try {
+                const response = await fetch('/admin/verify-ticket', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ticket_id: ticketId})
+                });
+                
+                const data = await response.json();
+                
+                const resultDiv = document.getElementById('scan-result');
+                const statusDiv = document.getElementById('result-status');
+                const detailsDiv = document.getElementById('result-details');
+                
+                if (data.status === 'valid') {
+                    statusDiv.className = 'result-status valid';
+                    statusDiv.textContent = 'VALID TICKET ✓';
+                    detailsDiv.innerHTML = `
+                        <p><strong>Ticket ID:</strong> ${data.ticket.id}</p>
+                        <p><strong>Event:</strong> ${data.ticket.instance}</p>
+                        <p><strong>Tier:</strong> ${data.ticket.tier.toUpperCase()}</p>
+                        <p><strong>Email:</strong> ${data.ticket.email}</p>
+                    `;
+                } else if (data.status === 'already_scanned') {
+                    statusDiv.className = 'result-status invalid';
+                    statusDiv.textContent = 'TICKET ALREADY SCANNED ✗';
+                    detailsDiv.innerHTML = `<p>${data.message}</p>`;
+                } else {
+                    statusDiv.className = 'result-status invalid';
+                    statusDiv.textContent = 'INVALID TICKET ✗';
+                    detailsDiv.innerHTML = `<p>${data.message}</p>`;
+                }
+                
+                resultDiv.style.display = 'block';
+            } catch (error) {
+                alert('Verification failed');
+            }
+        }
+        
+        function clearResult() {
+            document.getElementById('scan-result').style.display = 'none';
+            document.getElementById('qr-input-file').value = '';
+        }
+    </script>
+</body>
+</html>

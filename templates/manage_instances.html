@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Instances - The Dark Order</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MANAGE TICKET INSTANCES</h1>
+        </div>
+        
+        <div class="instances-list">
+            {% if instances %}
+                {% for instance in instances %}
+                <div class="instance-card" id="instance-{{ instance.id }}">
+                    <h3>{{ instance.name }}</h3>
+                    <p><strong>Capacity:</strong> {{ instance.capacity }}</p>
+                    <div class="prices">
+                        {% if instance.regular_price %}
+                        <span>Regular: KES {{ instance.regular_price }}</span>
+                        {% endif %}
+                        {% if instance.vip_price %}
+                        <span>VIP: KES {{ instance.vip_price }}</span>
+                        {% endif %}
+                        {% if instance.vvip_price %}
+                        <span>VVIP: KES {{ instance.vvip_price }}</span>
+                        {% endif %}
+                    </div>
+                    <button class="btn btn-danger" onclick="deleteInstance({{ instance.id }})">Delete</button>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-data">No ticket instances created yet</p>
+            {% endif %}
+        </div>
+        
+        <div class="button-group">
+            <a href="/admin/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+    
+    <script>
+        async function deleteInstance(id) {
+            if (!confirm('Are you sure you want to delete this ticket instance? This will NOT delete purchased tickets.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/delete-instance/${id}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById(`instance-${id}`).remove();
+                }
+            } catch (error) {
+                alert('Failed to delete instance');
+            }
+        }
+    </script>
+</body>
+</html>
