@@ -399,7 +399,16 @@ def ticket_selection():
         return redirect(url_for('signin'))
     
     instances = TicketInstance.query.all()
-    return render_template('tickets.html', instances=instances)
+    instances_data = [{
+        'id': instance.id,
+        'name': instance.name,
+        'capacity': instance.capacity,
+        'regular_price': instance.regular_price,
+        'vip_price': instance.vip_price,
+        'vvip_price': instance.vvip_price
+    } for instance in instances]
+    
+    return render_template('tickets.html', instances=instances, instances_json=instances_data)
 
 @app.route('/purchase', methods=['POST'])
 def purchase():

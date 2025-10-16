@@ -74,7 +74,7 @@
     
     <script>
         let cart = [];
-        const instances = {{ instances|tojson }};
+        const instances = {{ instances_json|tojson }};
         
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
