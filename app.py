@@ -2,7 +2,7 @@ import os
 import uuid
 import logging
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
@@ -26,8 +26,18 @@ import string
 load_dotenv()
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+
+# Use connection pooling to handle Neon's sleep behavior
+database_url = os.getenv('DATABASE_URL')
+if database_url and '.us-east-2' in database_url:
+    database_url = database_url.replace('.us-east-2', '-pooler.us-east-2')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+}
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
@@ -413,15 +423,25 @@ def ticket_selection():
 @app.route('/purchase', methods=['POST'])
 def purchase():
     if 'user_id' not in session:
-        return jsonify({'success': False}), 401
+        return jsonify({'success': False, 'error': 'Please sign in first'}), 401
     
     data = request.json
-    phone_number = data['phoneNumber']
-    cart = data['cart']
+    phone_number = data.get('phoneNumber', '')
+    cart = data.get('cart', [])
+    
+    if not phone_number or not cart:
+        return jsonify({'success': False, 'error': 'Phone number and cart items are required'}), 400
+    
+    # Validate phone number format
+    if not phone_number.startswith('254') or len(phone_number) != 12:
+        return jsonify({'success': False, 'error': 'Invalid phone number format. Use 254XXXXXXXXX'}), 400
     
     total_amount = 0
     for item in cart:
-        instance = TicketInstance.query.get(item['instance_id'])
+        instance = db.session.get(TicketInstance, item['instance_id'])
+        if not instance:
+            return jsonify({'success': False, 'error': f'Ticket instance {item["instance_id"]} not found'}), 404
+            
         if item['tier'] == 'regular':
             total_amount += instance.regular_price * item['quantity']
         elif item['tier'] == 'vip':
@@ -447,7 +467,7 @@ def purchase():
     
     payhero_data = {
         "amount": int(total_amount),
-        "phoneNumber": phone_number,
+        "phone_number": phone_number,
         "channel_id": int(os.getenv('PAYHERO_CHANNEL_ID')),
         "provider": "m-pesa",
         "external_reference": external_reference,
@@ -466,13 +486,24 @@ def purchase():
     try:
         response = requests.post('https://api.payhero.co.ke/api/v1/payments', 
                                json=payhero_data, headers=headers, timeout=30)
+        response_data = response.json()
+        
+        logger.info(f"PayHero Response: {response_data}")
         logger.info(f"STK Push initiated for {phone_number}, amount: {total_amount}, ref: {external_reference}")
-        return jsonify({'success': True, 'reference': external_reference, 'payhero_response': response.json()})
+        
+        if response.status_code == 200 or response.status_code == 201:
+            return jsonify({'success': True, 'reference': external_reference, 'payhero_response': response_data})
+        else:
+            logger.error(f"PayHero error: {response_data}")
+            payment.status = 'failed'
+            db.session.commit()
+            return jsonify({'success': False, 'error': response_data.get('message', 'Payment initiation failed')}), 500
+            
     except Exception as e:
         logger.error(f"STK Push failed: {str(e)}")
         payment.status = 'failed'
         db.session.commit()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': f'Payment system error: {str(e)}'}), 500
 
 @app.route('/api/payhero/callback', methods=['POST'])
 def payhero_callback():
