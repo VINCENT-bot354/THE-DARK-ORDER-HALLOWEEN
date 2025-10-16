@@ -145,17 +145,18 @@ def generate_pdf_ticket(ticket, user_email):
     c.setFont("Helvetica-Bold", 16)
     c.drawString(1*inch, height - 3*inch, f"Ticket Instance: {ticket.ticket_instance.name}")
     c.drawString(1*inch, height - 3.5*inch, f"Tier: {ticket.tier.upper()}")
-    c.drawString(1*inch, height - 4*inch, f"Ticket ID: {ticket.id}")
-    c.drawString(1*inch, height - 4.5*inch, f"Email: {user_email}")
+    c.drawString(1*inch, height - 4*inch, f"Covers: {ticket.ticket_instance.capacity} people")
+    c.drawString(1*inch, height - 4.5*inch, f"Ticket ID: {ticket.id}")
+    c.drawString(1*inch, height - 5*inch, f"Email: {user_email}")
     
     # QR Code
     qr_data, _ = generate_qr_code(ticket.id)
     qr_image = ImageReader(BytesIO(base64.b64decode(qr_data)))
-    c.drawImage(qr_image, width/2 - 1.5*inch, height - 8*inch, width=3*inch, height=3*inch)
+    c.drawImage(qr_image, width/2 - 1.5*inch, height - 8.5*inch, width=3*inch, height=3*inch)
     
     c.setFillColorRGB(0.8, 0, 0)
     c.setFont("Helvetica-Bold", 14)
-    c.drawCentredString(width/2, height - 8.5*inch, "SCAN QR CODE AT ENTRANCE")
+    c.drawCentredString(width/2, height - 9*inch, "SCAN QR CODE AT ENTRANCE")
     
     c.setFillColorRGB(0.6, 0.6, 0.6)
     c.setFont("Helvetica", 10)
