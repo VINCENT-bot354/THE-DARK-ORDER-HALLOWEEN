@@ -63,7 +63,8 @@ class Ticket(db.Model):
     client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     ticket_instance_id = db.Column(db.Integer, db.ForeignKey('ticket_instances.id'), nullable=False)
     tier = db.Column(db.String(20), nullable=False)
-    qr_code_data = db.Column(db.Text, nullable=False)
+    qr_code_url = db.Column(db.Text, nullable=False)
+    qr_code_base64 = db.Column(db.Text, nullable=False)
     scanned_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     pdf_path = db.Column(db.String(500), nullable=True)
@@ -75,7 +76,7 @@ class Payment(db.Model):
     external_reference = db.Column(db.String(100), unique=True, nullable=False)
     amount = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(50), nullable=False)
-    metadata = db.Column(db.Text, nullable=True)
+    payment_metadata = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     callback_received_at = db.Column(db.DateTime, nullable=True)
 
@@ -426,7 +427,7 @@ def purchase():
         external_reference=external_reference,
         amount=total_amount,
         status='pending',
-        metadata=json.dumps(cart)
+        payment_metadata=json.dumps(cart)
     )
     db.session.add(payment)
     db.session.commit()
@@ -483,7 +484,7 @@ def payhero_callback():
     db.session.commit()
     
     if status == 'success':
-        cart = json.loads(payment.metadata)
+        cart = json.loads(payment.payment_metadata)
         user = User.query.get(payment.client_id)
         tickets = []
         
@@ -497,7 +498,8 @@ def payhero_callback():
                     client_id=payment.client_id,
                     ticket_instance_id=item['instance_id'],
                     tier=item['tier'],
-                    qr_code_data=qr_url
+                    qr_code_url=qr_url,
+                    qr_code_base64=qr_data
                 )
                 db.session.add(ticket)
                 tickets.append(ticket)

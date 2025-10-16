@@ -22,7 +22,7 @@
                     <p class="not-scanned">Not yet scanned</p>
                     {% endif %}
                     <div class="qr-code">
-                        <img src="data:image/png;base64,{{ ticket.qr_code_data.split('/')[-1] }}" alt="QR Code" style="max-width: 200px;">
+                        <img src="data:image/png;base64,{{ ticket.qr_code_base64 }}" alt="QR Code" style="max-width: 200px;">
                     </div>
                     <a href="/download-ticket/{{ ticket.id }}" class="btn btn-primary">Download PDF</a>
                 </div>
