@@ -156,7 +156,7 @@
             setTimeout(() => {
                 messageDiv.style.opacity = '0';
                 setTimeout(() => messageDiv.remove(), 500);
-            }, 5000);
+            }, 8000);
         }
         
         async function purchaseTickets() {
@@ -185,7 +185,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showFlashMessage('Payment request sent! Please check your phone to complete the payment.', 'success');
+                    showFlashMessage('Payment request sent! Check your phone to complete payment. Tickets will be emailed to you and visible in "My Tickets" tab.', 'success');
                     cart = [];
                     updateCart();
                 } else {
