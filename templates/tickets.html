@@ -12,22 +12,22 @@
             <h1>THE DARK ORDER</h1>
             <h2>Select Your Tickets</h2>
         </div>
-        
+
         <div id="flash-messages"></div>
-        
+
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab('selection')">Ticket Selection</button>
             <button class="tab-btn" onclick="switchTab('my-tickets')">My Tickets</button>
             <button class="tab-btn" onclick="location.href='/logout'">Logout</button>
         </div>
-        
+
         <div id="selection-tab" class="tab-content active">
             <div class="tickets-grid">
                 {% if instances %}
                     {% for instance in instances %}
                     <div class="ticket-card">
                         <h3>{{ instance.name }}</h3>
-                        <p class="capacity">Capacity: {{ instance.capacity }}</p>
+                        <p class="capacity">Covers {{ instance.capacity }} {{ 'person' if instance.capacity == 1 else 'people' }}</p>
                         <div class="prices">
                             {% if instance.regular_price %}
                             <p>Regular: KES {{ instance.regular_price }}</p>
@@ -54,7 +54,7 @@
                     <p class="no-data">No tickets available at the moment</p>
                 {% endif %}
             </div>
-            
+
             <div id="cart-section" class="cart-section" style="display: none;">
                 <h2>Your Cart</h2>
                 <div id="cart-items"></div>
@@ -68,20 +68,20 @@
                 <button class="btn btn-primary" onclick="purchaseTickets()">Purchase Tickets</button>
             </div>
         </div>
-        
+
         <div id="my-tickets-tab" class="tab-content">
             <p>Loading tickets...</p>
         </div>
     </div>
-    
+
     <script>
         let cart = [];
         const instances = {{ instances_json|tojson }};
-        
+
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
+
             if (tab === 'selection') {
                 document.querySelector('.tab-btn').classList.add('active');
                 document.getElementById('selection-tab').classList.add('active');
@@ -91,17 +91,17 @@
                 loadMyTickets();
             }
         }
-        
+
         function addToCart(instanceId, instanceName) {
             const quantity = parseInt(document.getElementById(`qty-${instanceId}`).value) || 1;
             const tier = document.getElementById(`tier-${instanceId}`).value;
-            
+
             const instance = instances.find(i => i.id === instanceId);
             let price = 0;
             if (tier === 'regular') price = instance.regular_price;
             if (tier === 'vip') price = instance.vip_price;
             if (tier === 'vvip') price = instance.vvip_price;
-            
+
             cart.push({
                 instance_id: instanceId,
                 instance_name: instanceName,
@@ -109,26 +109,26 @@
                 quantity: quantity,
                 price: price
             });
-            
+
             updateCart();
         }
-        
+
         function removeFromCart(index) {
             cart.splice(index, 1);
             updateCart();
         }
-        
+
         function updateCart() {
             if (cart.length === 0) {
                 document.getElementById('cart-section').style.display = 'none';
                 return;
             }
-            
+
             document.getElementById('cart-section').style.display = 'block';
-            
+
             let html = '';
             let total = 0;
-            
+
             cart.forEach((item, index) => {
                 const itemTotal = item.price * item.quantity;
                 total += itemTotal;
@@ -140,11 +140,11 @@
                     </div>
                 `;
             });
-            
+
             document.getElementById('cart-items').innerHTML = html;
             document.getElementById('cart-total').textContent = total;
         }
-        
+
         function showFlashMessage(message, type) {
             const flashDiv = document.getElementById('flash-messages');
             const messageDiv = document.createElement('div');
@@ -152,26 +152,26 @@
             messageDiv.textContent = message;
             flashDiv.innerHTML = '';
             flashDiv.appendChild(messageDiv);
-            
+
             setTimeout(() => {
                 messageDiv.style.opacity = '0';
                 setTimeout(() => messageDiv.remove(), 500);
             }, 8000);
         }
-        
+
         async function purchaseTickets() {
             const phoneNumber = document.getElementById('phone-number').value;
-            
+
             if (!phoneNumber || cart.length === 0) {
                 showFlashMessage('Please add items to cart and enter phone number', 'error');
                 return;
             }
-            
+
             if (!phoneNumber.startsWith('254') || phoneNumber.length !== 12) {
                 showFlashMessage('Invalid phone number. Use format: 254XXXXXXXXX', 'error');
                 return;
             }
-            
+
             try {
                 const response = await fetch('/purchase', {
                     method: 'POST',
@@ -181,9 +181,9 @@
                         cart: cart
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     showFlashMessage('Payment request sent! Check your phone to complete payment. Tickets will be emailed to you and visible in "My Tickets" tab.', 'success');
                     cart = [];
@@ -195,7 +195,7 @@
                 showFlashMessage('Purchase failed: Network error', 'error');
             }
         }
-        
+
         async function loadMyTickets() {
             try {
                 const response = await fetch('/my-tickets');
@@ -203,7 +203,7 @@
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 const ticketsContent = doc.querySelector('.tickets-list');
-                
+
                 if (ticketsContent) {
                     document.getElementById('my-tickets-tab').innerHTML = ticketsContent.outerHTML;
                 } else {

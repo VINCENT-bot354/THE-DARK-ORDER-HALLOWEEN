@@ -145,7 +145,8 @@ def generate_pdf_ticket(ticket, user_email):
     c.setFont("Helvetica-Bold", 16)
     c.drawString(1*inch, height - 3*inch, f"Ticket Instance: {ticket.ticket_instance.name}")
     c.drawString(1*inch, height - 3.5*inch, f"Tier: {ticket.tier.upper()}")
-    c.drawString(1*inch, height - 4*inch, f"Covers: {ticket.ticket_instance.capacity} people")
+    capacity_text = f"Covers: {ticket.ticket_instance.capacity} {'person' if ticket.ticket_instance.capacity == 1 else 'people'}"
+    c.drawString(1*inch, height - 4*inch, capacity_text)
     c.drawString(1*inch, height - 4.5*inch, f"Ticket ID: {ticket.id}")
     c.drawString(1*inch, height - 5*inch, f"Email: {user_email}")
     

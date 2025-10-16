@@ -18,7 +18,7 @@
                 <h2>✓ VALID TICKET</h2>
                 <p><strong>Event:</strong> {{ ticket.ticket_instance.name }}</p>
                 <p><strong>Tier:</strong> {{ ticket.tier.upper() }}</p>
-                <p><strong>Covers:</strong> {{ ticket.ticket_instance.capacity }} people</p>
+                <p><strong>Covers:</strong> {{ ticket.ticket_instance.capacity }} {{ 'person' if ticket.ticket_instance.capacity == 1 else 'people' }}</p>
                 <p><strong>Ticket ID:</strong> {{ ticket.id }}</p>
                 {% if ticket.scanned_at %}
                 <p class="scanned">Already scanned at: {{ ticket.scanned_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>

@@ -14,7 +14,7 @@
                 <div class="my-ticket-card">
                     <h3>{{ ticket.ticket_instance.name }}</h3>
                     <p><strong>Tier:</strong> {{ ticket.tier.upper() }}</p>
-                    <p><strong>Covers:</strong> {{ ticket.ticket_instance.capacity }} people</p>
+                    <p><strong>Covers:</strong> {{ ticket.ticket_instance.capacity }} {{ 'person' if ticket.ticket_instance.capacity == 1 else 'people' }}</p>
                     <p><strong>Ticket ID:</strong> {{ ticket.id }}</p>
                     <p><strong>Purchased:</strong> {{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
                     {% if ticket.scanned_at %}
