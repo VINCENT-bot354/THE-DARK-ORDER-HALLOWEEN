@@ -471,11 +471,7 @@ def purchase():
         "channel_id": int(os.getenv('PAYHERO_CHANNEL_ID')),
         "provider": "m-pesa",
         "external_reference": external_reference,
-        "callback_url": f"{base_url}/api/payhero/callback",
-        "metadata": {
-            "client_id": session['user_id'],
-            "cart": cart
-        }
+        "callback_url": f"{base_url}/api/payhero/callback"
     }
     
     headers = {
@@ -484,7 +480,7 @@ def purchase():
     }
     
     try:
-        response = requests.post('https://api.payhero.co.ke/api/v1/payments', 
+        response = requests.post('https://backend.payhero.co.ke/api/v2/payments', 
                                json=payhero_data, headers=headers, timeout=30)
         response_data = response.json()
         
@@ -510,20 +506,28 @@ def payhero_callback():
     data = request.json
     logger.info(f"PayHero callback received: {json.dumps(data)}")
     
-    external_reference = data.get('external_reference')
-    status = data.get('status')
-    metadata = data.get('metadata', {})
+    # PayHero callback format: data['response'] contains the transaction details
+    response_data = data.get('response', {})
+    external_reference = response_data.get('ExternalReference')
+    result_code = response_data.get('ResultCode')
+    result_desc = response_data.get('ResultDesc', '')
+    payment_status = response_data.get('Status', '')
+    
+    if not external_reference:
+        logger.error(f"No external reference in callback: {data}")
+        return jsonify({'success': False, 'error': 'Missing external reference'}), 400
     
     payment = Payment.query.filter_by(external_reference=external_reference).first()
     if not payment:
         logger.error(f"Payment not found for reference: {external_reference}")
         return jsonify({'success': False}), 404
     
-    payment.status = status
-    payment.callback_received_at = datetime.utcnow()
-    db.session.commit()
-    
-    if status == 'success':
+    # ResultCode 0 means success
+    if result_code == 0 and payment_status == 'Success':
+        payment.status = 'success'
+        payment.callback_received_at = datetime.utcnow()
+        db.session.commit()
+        
         cart = json.loads(payment.payment_metadata)
         user = User.query.get(payment.client_id)
         tickets = []
@@ -548,6 +552,11 @@ def payhero_callback():
         logger.info(f"Generated {len(tickets)} tickets for payment {external_reference}")
         
         send_email_with_tickets(user.email, tickets, user)
+    else:
+        payment.status = 'failed'
+        payment.callback_received_at = datetime.utcnow()
+        db.session.commit()
+        logger.warning(f"Payment failed: {result_desc} (Code: {result_code})")
     
     return jsonify({'success': True})
 
