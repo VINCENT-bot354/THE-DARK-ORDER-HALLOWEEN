@@ -103,14 +103,19 @@
                 const detailsDiv = document.getElementById('result-details');
                 
                 if (data.status === 'valid') {
-                    statusDiv.className = 'result-status valid';
-                    statusDiv.textContent = 'VALID TICKET ✓';
-                    detailsDiv.innerHTML = `
-                        <p><strong>Ticket ID:</strong> ${data.ticket.id}</p>
-                        <p><strong>Event:</strong> ${data.ticket.instance}</p>
-                        <p><strong>Tier:</strong> ${data.ticket.tier.toUpperCase()}</p>
-                        <p><strong>Email:</strong> ${data.ticket.email}</p>
-                    `;
+    statusDiv.className = 'result-status valid';
+    statusDiv.textContent = 'VALID TICKET ✓';
+    detailsDiv.innerHTML = `
+        <p><strong>Ticket ID:</strong> ${data.ticket.id}</p>
+        <p><strong>Event:</strong> ${data.ticket.instance}</p>
+        <p><strong>Tier:</strong> ${data.ticket.tier.toUpperCase()}</p>
+        <p><strong>Email:</strong> ${data.ticket.email}</p>
+        <p><strong>Capacity:</strong> ${data.ticket.capacity}</p>
+    `;
+}
+
+}
+
                 } else if (data.status === 'already_scanned') {
                     statusDiv.className = 'result-status invalid';
                     statusDiv.textContent = 'TICKET ALREADY SCANNED ✗';
