@@ -115,9 +115,10 @@
                     document.getElementById('error-message').style.display = 'block';
                 }
             } catch (error) {
-                document.getElementById('error-message').textContent = 'Failed to reset PIN';
-                document.getElementById('error-message').style.display = 'block';
-            }
+    document.getElementById('error-message').textContent = 'Error: ' + (error.message || error);
+    document.getElementById('error-message').style.display = 'block';
+    console.error('Forgot PIN error:', error);
+}
         }
     </script>
 </body>
