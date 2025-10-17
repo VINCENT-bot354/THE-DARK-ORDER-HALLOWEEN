@@ -19,6 +19,8 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 import json
 import random
 import string
@@ -169,11 +171,19 @@ def generate_pdf_ticket(ticket, user_email):
 
 def send_email_with_tickets(to_email, tickets, user):
     try:
-        msg = MIMEMultipart()
-        msg['From'] = os.getenv('EMAIL_ADDRESS')
-        msg['To'] = to_email
-        msg['Subject'] = "Your Dark Order Halloween Tickets"
-        
+        attachments = []
+        for ticket in tickets:
+            pdf_buffer = generate_pdf_ticket(ticket, to_email)
+            pdf_content = pdf_buffer.read()
+            attachments.append(
+                Attachment(
+                    FileContent(base64.b64encode(pdf_content).decode()),
+                    FileName(f"ticket_{ticket.id}.pdf"),
+                    FileType("application/pdf"),
+                    Disposition("attachment")
+                )
+            )
+
         body = f"""
         <html>
         <body style="background-color: #1a0000; color: #ffffff; font-family: Arial, sans-serif; padding: 20px;">
@@ -187,24 +197,25 @@ def send_email_with_tickets(to_email, tickets, user):
         </body>
         </html>
         """
-        msg.attach(MIMEText(body, 'html'))
-        
-        for ticket in tickets:
-            pdf_buffer = generate_pdf_ticket(ticket, to_email)
-            pdf_part = MIMEApplication(pdf_buffer.read(), _subtype="pdf")
-            pdf_part.add_header('Content-Disposition', 'attachment', filename=f'ticket_{ticket.id}.pdf')
-            msg.attach(pdf_part)
-        
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(os.getenv('EMAIL_ADDRESS'), os.getenv('EMAIL_APP_PASSWORD'))
-        server.send_message(msg)
-        server.quit()
-        
-        logger.info(f"Email sent successfully to {to_email} with {len(tickets)} tickets")
+
+        message = Mail(
+            from_email=os.getenv('EMAIL_ADDRESS'),
+            to_emails=to_email,
+            subject="Your Dark Order Halloween Tickets",
+            html_content=body
+        )
+
+        if attachments:
+            message.attachment = attachments
+
+        sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
+        sg.send(message)
+
+        logger.info(f"Email sent successfully to {to_email} with {len(tickets)} tickets via SendGrid")
         return True
+
     except Exception as e:
-        logger.error(f"Email sending failed: {str(e)}")
+        logger.error(f"Email sending failed via SendGrid: {str(e)}")
         return False
 
 # Routes - Home
@@ -376,35 +387,32 @@ def forgot_pin():
     user.pin_hash = generate_password_hash(new_pin)
     db.session.commit()
     
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = os.getenv('EMAIL_ADDRESS')
-        msg['To'] = email
-        msg['Subject'] = "Your New PIN - Dark Order"
-        
-        body = f"""
-        <html>
-        <body style="background-color: #1a0000; color: #ffffff; font-family: Arial, sans-serif; padding: 20px;">
-            <h1 style="color: #cc0000;">PIN Reset</h1>
-            <p>Your new PIN is: <strong style="font-size: 24px; color: #cc0000;">{new_pin}</strong></p>
-            <p>Please use this PIN to sign in to your account.</p>
-        </body>
-        </html>
-        """
-        msg.attach(MIMEText(body, 'html'))
-        
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(os.getenv('EMAIL_ADDRESS'), os.getenv('EMAIL_APP_PASSWORD'))
-        server.send_message(msg)
-        server.quit()
-        
-        logger.info(f"PIN reset email sent to {email}")
-        return jsonify({'success': True})
-    except Exception as e:
-        logger.error(f"Failed to send PIN reset email: {str(e)}")
-        return jsonify({'success': False, 'error': 'Failed to send email'}), 500
+   try:
+    body = f"""
+    <html>
+    <body style="background-color: #1a0000; color: #ffffff; font-family: Arial, sans-serif; padding: 20px;">
+        <h1 style="color: #cc0000;">PIN Reset</h1>
+        <p>Your new PIN is: <strong style="font-size: 24px; color: #cc0000;">{new_pin}</strong></p>
+        <p>Please use this PIN to sign in to your account.</p>
+    </body>
+    </html>
+    """
 
+    message = Mail(
+        from_email=os.getenv('EMAIL_ADDRESS'),
+        to_emails=email,
+        subject="Your New PIN - Dark Order",
+        html_content=body
+    )
+
+    sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
+    sg.send(message)
+
+    logger.info(f"PIN reset email sent to {email} via SendGrid")
+    return jsonify({'success': True})
+except Exception as e:
+    logger.error(f"Failed to send PIN reset email via SendGrid: {str(e)}")
+    return jsonify({'success': False, 'error': 'Failed to send email'}), 500
 @app.route('/tickets')
 def ticket_selection():
     if 'user_id' not in session:
