@@ -327,6 +327,7 @@ def verify_ticket():
             'id': ticket.id,
             'instance': ticket.ticket_instance.name,
             'tier': ticket.tier,
+            'capacity': f"Covers {instance.capacity}",
             'email': ticket.user.email
         }
     })
