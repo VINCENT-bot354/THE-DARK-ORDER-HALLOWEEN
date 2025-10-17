@@ -26,7 +26,7 @@
             <div id="scan-result" class="scan-result" style="display: none;">
                 <div id="result-status" class="result-status"></div>
                 <div id="result-details" class="result-details"></div>
-                <button class="btn btn-primary" onclick="startCamera()">Scan Next Ticket</button>
+                <button class="btn btn-primary" onclick="clearResult()">Scan Next Ticket</button>
             </div>
         </div>
         
@@ -130,10 +130,14 @@
 }
 
         
-        function clearResult() {
-            document.getElementById('scan-result').style.display = 'none';
-            document.getElementById('qr-input-file').value = '';
-        }
+        async function clearResult() {
+    document.getElementById('scan-result').style.display = 'none';
+    document.getElementById('qr-input-file').value = '';
+
+    // Restart the camera automatically for next scan
+    await startCamera();
+}
+
     </script>
 </body>
 </html>
