@@ -387,32 +387,33 @@ def forgot_pin():
     user.pin_hash = generate_password_hash(new_pin)
     db.session.commit()
     
-   try:
-    body = f"""
-    <html>
-    <body style="background-color: #1a0000; color: #ffffff; font-family: Arial, sans-serif; padding: 20px;">
-        <h1 style="color: #cc0000;">PIN Reset</h1>
-        <p>Your new PIN is: <strong style="font-size: 24px; color: #cc0000;">{new_pin}</strong></p>
-        <p>Please use this PIN to sign in to your account.</p>
-    </body>
-    </html>
-    """
+    try:
+        body = f"""
+        <html>
+        <body style="background-color: #1a0000; color: #ffffff; font-family: Arial, sans-serif; padding: 20px;">
+            <h1 style="color: #cc0000;">PIN Reset</h1>
+            <p>Your new PIN is: <strong style="font-size: 24px; color: #cc0000;">{new_pin}</strong></p>
+            <p>Please use this PIN to sign in to your account.</p>
+        </body>
+        </html>
+        """
 
-    message = Mail(
-        from_email=os.getenv('EMAIL_ADDRESS'),
-        to_emails=email,
-        subject="Your New PIN - Dark Order",
-        html_content=body
-    )
+        message = Mail(
+            from_email=os.getenv('EMAIL_ADDRESS'),
+            to_emails=email,
+            subject="Your New PIN - Dark Order",
+            html_content=body
+        )
 
-    sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
-    sg.send(message)
+        sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
+        sg.send(message)
 
-    logger.info(f"PIN reset email sent to {email} via SendGrid")
-    return jsonify({'success': True})
-except Exception as e:
-    logger.error(f"Failed to send PIN reset email via SendGrid: {str(e)}")
-    return jsonify({'success': False, 'error': 'Failed to send email'}), 500
+        logger.info(f"PIN reset email sent to {email} via SendGrid")
+        return jsonify({'success': True})
+
+    except Exception as e:
+        logger.error(f"Failed to send PIN reset email via SendGrid: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to send email'}), 500
 @app.route('/tickets')
 def ticket_selection():
     if 'user_id' not in session:
