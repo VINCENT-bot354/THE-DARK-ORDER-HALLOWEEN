@@ -185,7 +185,7 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showFlashMessage('Payment request sent! Check your phone to complete payment. Tickets will be emailed to you and visible in "My Tickets" tab.', 'success');
+                    showFlashMessage('Payment request sent! Check your phone to complete payment. Tickets will be emailed to you, BE SURE TO CHECK SPAM. Additionaly they are visible in "My Tickets" tab.', 'success');
                     cart = [];
                     updateCart();
                 } else {
