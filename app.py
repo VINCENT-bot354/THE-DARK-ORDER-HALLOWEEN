@@ -73,7 +73,7 @@ class Ticket(db.Model):
     __tablename__ = 'tickets'
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-   ticket_instance_id = db.Column(
+    ticket_instance_id = db.Column(
     db.Integer,
     db.ForeignKey('ticket_instances.id', ondelete='SET NULL'),
     nullable=True
