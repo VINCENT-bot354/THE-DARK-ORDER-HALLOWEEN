@@ -73,7 +73,12 @@ class Ticket(db.Model):
     __tablename__ = 'tickets'
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    ticket_instance_id = db.Column(db.Integer, db.ForeignKey('ticket_instances.id'), nullable=False)
+   ticket_instance_id = db.Column(
+    db.Integer,
+    db.ForeignKey('ticket_instances.id', ondelete='SET NULL'),
+    nullable=True
+)
+
     tier = db.Column(db.String(20), nullable=False)
     qr_code_url = db.Column(db.Text, nullable=False)
     qr_code_base64 = db.Column(db.Text, nullable=False)
