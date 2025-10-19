@@ -40,7 +40,7 @@
                             {% endif %}
                         </div>
                         <div class="ticket-controls">
-                            <input type="number" placeholder="HOW MANY" min="1" id="qty-{{ instance.id }}" class="quantity-input">
+                            <input type="number" placeholder="HOW MANY OF THIS TYPE" min="1" id="qty-{{ instance.id }}" class="quantity-input">
                             <select id="tier-{{ instance.id }}" class="tier-select">
                                 {% if instance.regular_price %}<option value="regular">Regular</option>{% endif %}
                                 {% if instance.vip_price %}<option value="vip">VIP</option>{% endif %}
