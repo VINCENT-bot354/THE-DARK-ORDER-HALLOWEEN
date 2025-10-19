@@ -160,41 +160,52 @@
         }
 
         async function purchaseTickets() {
-            const phoneNumber = document.getElementById('phone-number').value;
+    let phoneNumber = document.getElementById('phone-number').value;
 
-            if (!phoneNumber || cart.length === 0) {
-                showFlashMessage('Please add items to cart and enter phone number', 'error');
-                return;
-            }
+    // Check that user entered phone number and cart is not empty
+    if (!phoneNumber || cart.length === 0) {
+        showFlashMessage('Please add items to cart and enter phone number', 'error');
+        return;
+    }
 
-            if (!(phoneNumber.startsWith('254') && phoneNumber.length === 12) &&
-    !(phoneNumber.startsWith('0') && phoneNumber.length === 10)) {
-    showFlashMessage('Invalid phone number.', 'error');
-    return;
-}
-            try {
-                const response = await fetch('/purchase', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        phoneNumber: phoneNumber,
-                        cart: cart
-                    })
-                });
+    // Validate phone number format: accept 07XXXXXXXX or 2547XXXXXXXX
+    if (!(phoneNumber.startsWith('254') && phoneNumber.length === 12) &&
+        !(phoneNumber.startsWith('0') && phoneNumber.length === 10)) {
+        showFlashMessage('Invalid phone number.', 'error');
+        return;
+    }
 
-                const data = await response.json();
+    // Auto-convert local 07... format to 254... for PayHero API
+    if (phoneNumber.startsWith('0')) {
+        phoneNumber = '254' + phoneNumber.slice(1);
+    }
 
-                if (data.success) {
-                    showFlashMessage('Payment request sent! Check your phone to complete payment. Tickets will be emailed to you, BE SURE TO CHECK SPAM. Additionaly they are visible in "My Tickets" tab.', 'success');
-                    cart = [];
-                    updateCart();
-                } else {
-                    showFlashMessage('Payment failed: ' + (data.error || 'Unknown error'), 'error');
-                }
-            } catch (error) {
-                showFlashMessage('Purchase failed: Network error', 'error');
-            }
+    try {
+        const response = await fetch('/purchase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                phoneNumber: phoneNumber,
+                cart: cart
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showFlashMessage(
+                'Payment request sent! Check your phone to complete payment. Tickets will be emailed to you — also check your spam folder. They’ll appear in the "My Tickets" tab.',
+                'success'
+            );
+            cart = [];
+            updateCart();
+        } else {
+            showFlashMessage('Payment failed: ' + (data.error || 'Unknown error'), 'error');
         }
+    } catch (error) {
+        showFlashMessage('Purchase failed: Network error', 'error');
+    }
+}
 
         async function loadMyTickets() {
             try {
