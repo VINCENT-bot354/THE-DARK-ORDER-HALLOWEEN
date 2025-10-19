@@ -432,12 +432,12 @@ body {
     background: rgba(0, 0, 0, 0.8);
     padding: 30px;
     border-radius: 10px;
-    border: 2px solid #cc0000;
+    border: 2px solid #00b300;
     margin-top: 40px;
 }
 
 .cart-section h2 {
-    color: #cc0000;
+    color: #00b300;
     margin-bottom: 20px;
 }
 
@@ -452,7 +452,7 @@ body {
 }
 
 .cart-total {
-    background: #cc0000;
+    background: #00b300;
     color: white;
     padding: 20px;
     border-radius: 5px;
