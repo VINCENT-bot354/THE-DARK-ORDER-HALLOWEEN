@@ -414,7 +414,7 @@ def forgot_pin():
         sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
         sg.send(message)
 
-        logger.info(f"PIN reset email sent to {email} via SendGrid")
+        logger.info(f"PIN reset email sent to {email} via SendGrid {new_pin}")
         return jsonify({'success': True})
 
     except Exception as e:
